@@ -18,7 +18,7 @@ public class ServiceUtil {
         PendingIntent pendingIntent = PendingIntent.getBroadcast(context.getApplicationContext(), 234324243, intent, 0);
         AlarmManager alarmManager = (AlarmManager)context.getSystemService(ALARM_SERVICE);
         alarmManager.setInexactRepeating(AlarmManager.RTC_WAKEUP, 5000, 30000, pendingIntent);
-        Toast.makeText(context, "Alarm set in " + i + " seconds", Toast.LENGTH_LONG).show();
+
 
         Log.d("MyApplicationName", "Alarm set!");
     }

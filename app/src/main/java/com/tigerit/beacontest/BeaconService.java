@@ -42,8 +42,9 @@ public class BeaconService extends Service implements BootstrapNotifier {
     }
 
 
-    public void setUpBeacon(){
+    public void setUpBeacon() {
         BeaconManager beaconManager = BeaconManager.getInstanceForApplication(this);
+       // beaconManager.setBackgroundScanPeriod(10000);
 
         backgroundPowerSaver = new BackgroundPowerSaver(this);
         // To detect proprietary beacons, you must add a line like below corresponding to your beacon
@@ -53,16 +54,24 @@ public class BeaconService extends Service implements BootstrapNotifier {
         // wake up the app when any beacon is seen (you can specify specific id filers in the parameters below)
         Region region = new Region("unqId", Identifier.parse("0x00000000000000000001"), Identifier.parse("0x123456789012"), null);
 
+
         // Region region = new Region("unqId", null, null, null);
+        if(regionBootstrap!=null){
+            regionBootstrap.disable();
+        }
         regionBootstrap = new RegionBootstrap(this, region);
 
 
+
+
+
     }
+
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-         super.onStartCommand(intent, flags, startId);
+        super.onStartCommand(intent, flags, startId);
         setUpBeacon();
-          return Service.START_STICKY;
+        return Service.START_STICKY;
     }
 
     @Override
@@ -70,13 +79,18 @@ public class BeaconService extends Service implements BootstrapNotifier {
         Log.d("MyApplicationName", "Beacon found!");
         regionBootstrap.disable();
 
-       NotificationUtil.sendNotification(this,
-               arg0.getId1() == null ? null : arg0.getId1().toString(),
-               arg0.getId2() == null ? null : arg0.getId2().toString(),
-               arg0.getId3() == null ? null : arg0.getId3().toString());
+        GlobalVariable.beaconInRange = true;
+        if (!GlobalVariable.notificationShown) {
+            GlobalVariable.notificationShown = true;
+            NotificationUtil.sendNotification(this,
+                    arg0.getId1() == null ? null : arg0.getId1().toString(),
+                    arg0.getId2() == null ? null : arg0.getId2().toString(),
+                    arg0.getId3() == null ? null : arg0.getId3().toString());
+        }
 
-      // stopSelf();
-      //  setUpBeacon();
+
+        // stopSelf();
+        //  setUpBeacon();
     }
 
     @Override
@@ -86,6 +100,13 @@ public class BeaconService extends Service implements BootstrapNotifier {
 
     @Override
     public void didDetermineStateForRegion(int i, Region region) {
-        Log.d("MyApplicationName", "Beacon state: "+ (i == 0 ? "Scanning" : "Not Scanning"));
+
+        if(i==0){
+            if(!GlobalVariable.beaconInRange){
+                GlobalVariable.notificationShown = false;
+            }
+            GlobalVariable.beaconInRange = false;
+        }
+        Log.d("MyApplicationName", "Beacon state: " + (i == 0 ? "Scanning" : "Not Scanning"));
     }
 }
