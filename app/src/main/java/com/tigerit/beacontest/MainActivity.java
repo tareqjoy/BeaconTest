@@ -6,8 +6,6 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 
 import android.Manifest;
-import android.app.AlarmManager;
-import android.app.PendingIntent;
 import android.bluetooth.BluetoothAdapter;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -16,22 +14,19 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.PowerManager;
 import android.provider.Settings;
-import android.text.Editable;
-import android.text.TextWatcher;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
-import android.widget.EditText;
-import android.widget.Toast;
 
 public class MainActivity extends AppCompatActivity {
 
     private final int PERMISSION_REQUEST_CODE = 1;
 
-    private Button btnPermission, btnActivity, btnBluetooth;
+    private Button btnPermission, btnActivity, btnBluetooth, btnForce;
     private BluetoothAdapter bluetoothAdapter;
+    private final String FORCE_GET_NOTIFICATION = "FORCE GET NOTIFICATIONS", INTELLIGENT_NOTIFICATION = "INTELLIGENT NOTIFICATIONS";
 
-    @RequiresApi(api = Build.VERSION_CODES.M)
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -41,15 +36,21 @@ public class MainActivity extends AppCompatActivity {
         btnBluetooth = findViewById(R.id.btn_bluetooth);
         btnActivity = findViewById(R.id.btn_activity);
         btnPermission = findViewById(R.id.btn_permission);
+        btnForce  = findViewById(R.id.btn_force);
 
         bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 
-        btnPermission.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                requestPermissions();
-            }
-        });
+        if(Build.VERSION.SDK_INT>=Build.VERSION_CODES.M){
+            btnPermission.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    requestPermissions();
+                }
+            });
+        } else {
+            btnPermission.setVisibility(View.GONE);
+        }
+
 
         btnActivity.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -66,7 +67,33 @@ public class MainActivity extends AppCompatActivity {
         });
 
 
-        startSafeBeaconAlarm();
+        if(GlobalVariable.getIntelligentNotification(getApplicationContext())){
+
+            btnForce.setText(FORCE_GET_NOTIFICATION);
+        } else {
+            btnForce.setText(INTELLIGENT_NOTIFICATION);
+        }
+        btnForce.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if(btnForce.getText().equals(FORCE_GET_NOTIFICATION)) {
+
+                    GlobalVariable.setIntelligentNotification(getApplicationContext(), false);
+                    Log.d("MyApplicationName", "Forced get notification");
+
+                    btnForce.setText(INTELLIGENT_NOTIFICATION);
+                } else {
+                    GlobalVariable.setIntelligentNotification(getApplicationContext(), true);
+                    Log.d("MyApplicationName", "Intelligent notification");
+                    btnForce.setText(FORCE_GET_NOTIFICATION);
+                }
+            }
+        });
+
+        checkBluetooth();
+        checkBatteryOptimization();
+        checkPermissions();
+    //    startSafeBeaconAlarm();
 
 
     }
@@ -118,9 +145,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private boolean checkPermissions() {
-        if (ContextCompat.checkSelfPermission(
-                this, Manifest.permission.ACCESS_BACKGROUND_LOCATION) ==
-                PackageManager.PERMISSION_GRANTED) {
+        if (RequirementsUtil.checkPermissions(this)) {
             // You can use the API that requires the permission.
             //  turnOnBeacon();
             btnPermission.setEnabled(false);
@@ -137,7 +162,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private boolean checkBluetooth() {
-        if (bluetoothAdapter.isEnabled()) {
+        if (RequirementsUtil.checkBluetooth()) {
             btnBluetooth.setEnabled(false);
             return true;
         }
@@ -156,8 +181,9 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void startSafeBeaconAlarm(){
+        checkBatteryOptimization();
         if(checkBluetooth() && checkPermissions()){
-            ServiceUtil.startAlert(this);
+            AlarmUtil.setImmediateAlarm(this);
         }
 
     }

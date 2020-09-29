@@ -23,7 +23,9 @@
         android:id="@+id/btn_activity"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:enabled="false"
         android:text="Enable Background Activity"
+        android:visibility="gone"
         app:layout_constraintBottom_toTopOf="@+id/btn_bluetooth"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"
@@ -35,9 +37,20 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Enable Bluetooth"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/btn_force"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/btn_activity" />
+
+    <Button
+        android:id="@+id/btn_force"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:text="Force notify"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/btn_bluetooth" />
 </androidx.constraintlayout.widget.ConstraintLayout>

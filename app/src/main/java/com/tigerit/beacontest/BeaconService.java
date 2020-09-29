@@ -22,7 +22,7 @@ public class BeaconService extends Service implements BootstrapNotifier {
     @Override
     public void onDestroy() {
 
-        ServiceUtil.startAlert(this);
+     //   AlarmUtil.setAlarmLater(this);
         super.onDestroy();
         Log.d("MyApplicationName", "Service destroyed!");
     }
@@ -44,7 +44,7 @@ public class BeaconService extends Service implements BootstrapNotifier {
 
     public void setUpBeacon() {
         BeaconManager beaconManager = BeaconManager.getInstanceForApplication(this);
-       // beaconManager.setBackgroundScanPeriod(10000);
+        // beaconManager.setBackgroundScanPeriod(10000);
 
         backgroundPowerSaver = new BackgroundPowerSaver(this);
         // To detect proprietary beacons, you must add a line like below corresponding to your beacon
@@ -56,13 +56,10 @@ public class BeaconService extends Service implements BootstrapNotifier {
 
 
         // Region region = new Region("unqId", null, null, null);
-        if(regionBootstrap!=null){
+        if (regionBootstrap != null) {
             regionBootstrap.disable();
         }
         regionBootstrap = new RegionBootstrap(this, region);
-
-
-
 
 
     }
@@ -76,16 +73,22 @@ public class BeaconService extends Service implements BootstrapNotifier {
 
     @Override
     public void didEnterRegion(Region arg0) {
-        Log.d("MyApplicationName", "Beacon found!");
+
         regionBootstrap.disable();
 
-        GlobalVariable.beaconInRange = true;
-        if (!GlobalVariable.notificationShown) {
-            GlobalVariable.notificationShown = true;
+        if(GlobalVariable.getIntelligentNotification(this)){
+            GlobalVariable.setBeaconInRange(this, true);
+        }
+
+        if (!GlobalVariable.getNotificationShown(this)) {
+            Log.d("MyApplicationName", "Beacon found and notified");
+            GlobalVariable.setNotificationShown(this, true);
             NotificationUtil.sendNotification(this,
                     arg0.getId1() == null ? null : arg0.getId1().toString(),
                     arg0.getId2() == null ? null : arg0.getId2().toString(),
                     arg0.getId3() == null ? null : arg0.getId3().toString());
+        } else {
+            Log.d("MyApplicationName", "Beacon found and but not notified");
         }
 
 
@@ -101,11 +104,18 @@ public class BeaconService extends Service implements BootstrapNotifier {
     @Override
     public void didDetermineStateForRegion(int i, Region region) {
 
-        if(i==0){
-            if(!GlobalVariable.beaconInRange){
-                GlobalVariable.notificationShown = false;
+        if (i == 0) {
+            if (!GlobalVariable.getBeaconInRange(this)) {
+                Log.d("MyApplicationName", "Previously, no beacon found. Will notify upon beacon found.");
+                GlobalVariable.setNotificationShown(this, false);
+            } else {
+                Log.d("MyApplicationName", "Previously, a beacon found. Notification is paused. Will just check beacon availability.");
             }
-            GlobalVariable.beaconInRange = false;
+            GlobalVariable.setBeaconInRange(this, false);
+        }
+
+        if (i == 1) {
+            AlarmUtil.setAlarmLater(this);
         }
         Log.d("MyApplicationName", "Beacon state: " + (i == 0 ? "Scanning" : "Not Scanning"));
     }
